@@ -1,0 +1,373 @@
+import streamlit as st
+import ollama
+import random
+import time
+import re
+
+# --- CONFIGURATION & LORE ---
+AVAILABLE_MODELS = ['llama3:8b', 'phi3', 'qwen2:1.5b']
+
+CHARACTERS_DB = [
+    {"name": "Arthur the Butler", "style": "Highly formal, stiff, dry British vocabulary. Never stutters."},
+    {"name": "Beatrice the Widow", "style": "Melodramatic, weeping, uses exclamation points."},
+    {"name": "Charles the Doctor", "style": "Clinical, precise, cold, and slightly arrogant."},
+    {"name": "Diana the Heiress", "style": "Snobby, dismissive, bored, uses modern slang ironically."},
+    {"name": "Edward the Chauffeur", "style": "Gruff, working-class, uses short and blunt sentences."},
+    {"name": "Fiona the Maid", "style": "Highly nervous, apologetic, and stutters frequently (e.g., 'I-I didn't do it!')."},
+    {"name": "George the Chef", "style": "Passionate, loud, uses culinary metaphors."},
+    {"name": "Helen the Governess", "style": "Stern, reprimanding, speaks like she is scolding a child."},
+    {"name": "Isaac the Clockmaker", "style": "Distracted, rambling, fixated on time and precision."},
+    {"name": "Josephine the Singer", "style": "Flirtatious, dramatic, speaks poetically."},
+    {"name": "Karl the Groundsman", "style": "Paranoid, aggressive, highly defensive."},
+    {"name": "Lydia the Journalist", "style": "Inquisitive, fast-talking, treats everything like an interview."},
+    {"name": "Reginald the Earl", "style": "Extremely pompous, uses archaic words like 'poppycock'."},
+    {"name": "Silas the Smuggler", "style": "Cryptic, uses underworld slang."},
+    {"name": "Clara the Niece", "style": "Highly naive, overly sweet, and relentlessly optimistic."},
+    {"name": "Major Sterling", "style": "Barks out sentences, uses military jargon."},
+    {"name": "Julian the Painter", "style": "Pretentious, overly descriptive, dramatic pauses."},
+    {"name": "Eleanor the Socialite", "style": "Passive-aggressive, catty, veiled insults."},
+    {"name": "Professor Vance", "style": "Pedantic, overly complex academic words."},
+    {"name": "Victor the Lawyer", "style": "Legalistic, uses phrases like 'allegedly'."},
+    {"name": "Martha the Cook", "style": "Motherly but gossipy, calls people 'dearie'."},
+    {"name": "Baron Von Althaus", "style": "Highly formal, proud, stiff European syntax."},
+    {"name": "Tobias the Stableboy", "style": "Simple vocabulary, ends sentences with 'sir' or 'ma'am'."},
+    {"name": "Madame Zara", "style": "Cryptic, references spirits and auras."},
+    {"name": "Marcus the Mayor", "style": "Politician-speak, overly diplomatic, dodges questions."},
+    {"name": "Nora the Seamstress", "style": "Quiet, observant, uses sewing metaphors."},
+    {"name": "Oliver the Blacksmith", "style": "Booming voice, simple heavy-hitting words."},
+    {"name": "Penelope the Astrologer", "style": "Dreamy tone, talks about cosmic alignments."},
+    {"name": "Quentin the Banker", "style": "Obsessed with money and ledgers."},
+    {"name": "Rose the Botanist", "style": "Sweet tone but highly morbid, plant metaphors."}
+]
+
+# Deeper Themes: Modifying Fonts, Borders, Backgrounds, and Colors
+THEMES = {
+    "The Omniscient Magistrate": {
+        "prologue": "A high-society gala has ended in bloodshed. A prominent guest lies dead in the atrium. Guide the hidden Detective to the truth.",
+        "god_prompt": "An undeniable instinct guides your thoughts: {suspect} is lying. Press them relentlessly.",
+        "bg": "#f4f6f9", "box": "#ffffff", "primary": "#2c3e50", "border": "2px solid #2c3e50",
+        "font": "Georgia, serif", "bubble_bg": "#ffffff", "border_radius": "5px"
+    },
+    "The Eldritch Watcher": {
+        "prologue": "The coastal fog hides a grisly scene. A scholar was found butchered in the old library. Nudge the hidden investigator toward the prey.",
+        "god_prompt": "A maddening whisper from the void echoes in your mind: {suspect} is masking their guilt. Break them.",
+        "bg": "#e6ece8", "box": "#d4ded7", "primary": "#1f402e", "border": "2px dashed #1f402e",
+        "font": "'Courier New', Courier, monospace", "bubble_bg": "#d4ded7", "border_radius": "0px"
+    },
+    "The Olympian": {
+        "prologue": "Tragedy strikes the sunlit terraces! A beloved patron has been poisoned with hemlock. Grant clarity to the mortal seeking truth.",
+        "god_prompt": "Athena's wisdom pierces the veil of lies. {suspect} is hiding the truth. Uncover it.",
+        "bg": "#fdfbf7", "box": "#fcf5e3", "primary": "#b8860b", "border": "3px double #b8860b",
+        "font": "'Palatino Linotype', 'Book Antiqua', Palatino, serif", "bubble_bg": "#fcf5e3", "border_radius": "15px"
+    }
+}
+
+# --- STATE MANAGEMENT ---
+if 'game_phase' not in st.session_state:
+    st.session_state.game_phase = 'setup'
+    st.session_state.players = {}
+    st.session_state.daily_transcripts = {1: []} # Changed to a list of dicts for clean rendering
+    st.session_state.summaries = {}
+    st.session_state.day = 1
+    st.session_state.god_whispers = []
+    st.session_state.daily_order = []
+    st.session_state.speaker_idx = 0
+
+# --- HELPER FUNCTIONS ---
+def get_alive_players():
+    return {k: v for k, v in st.session_state.players.items() if v['status'] == 'alive'}
+
+def format_transcript_for_prompt(day):
+    """Converts the list of dicts into a clean string for the LLM to read."""
+    log = st.session_state.daily_transcripts[day]
+    return "\n".join([f"{item['speaker']}: {item['text']}" for item in log])
+
+def clean_llm_output(text, speaker_name):
+    """Strips out hallucinated instructions and accidental name prefixes."""
+    text = re.sub(r'## Instruction.*?\n', '', text, flags=re.IGNORECASE)
+    text = text.replace("(High Diff 03)", "").strip()
+    if text.lower().startswith(f"{speaker_name.lower()}:"):
+        text = text[len(speaker_name)+1:].strip()
+    return text
+
+def format_prompt(char_name, role, style):
+    base = f"You are {char_name}. Your personality is: {style}. "
+    if role == 'Killer':
+        base += "You are the hidden KILLER. Lie, deflect, and cast suspicion on others. "
+    elif role == 'Detective':
+        base += "You are the hidden DETECTIVE trying to solve the murder. Ask sharp questions. "
+    else:
+        base += "You are INNOCENT. Defend yourself based on your personality. "
+    base += "Respond with ONLY your spoken dialogue. Do not include your name or '## Instruction'. Keep it to exactly 1 or 2 sentences."
+    return base
+
+def stream_llm_response(model, sys_prompt, user_prompt):
+    messages = [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_prompt}]
+    stream = ollama.chat(model=model, messages=messages, stream=True)
+    for chunk in stream:
+        yield chunk['message']['content']
+        time.sleep(0.02)
+
+def generate_daily_summary(day, transcript_text):
+    sys_p = "You are a concise narrator. Summarize the key clues and suspicions from today's interrogation in exactly 3 short bullet points."
+    user_p = f"Day {day} Transcript:\n{transcript_text}"
+    resp = ollama.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+    return resp['message']['content']
+
+# --- UI SETUP & CSS ---
+st.set_page_config(layout="centered", page_title="Mystery Sim")
+active_theme = THEMES.get(st.session_state.get('theme_choice', "The Omniscient Magistrate"))
+
+# Dynamic CSS Injection based on chosen theme
+st.markdown(f"""
+<style>
+    .stApp {{ background-color: {active_theme['bg']}; color: #333333; font-family: {active_theme['font']}; }}
+    h1, h2, h3 {{ color: {active_theme['primary']}; text-align: center; font-family: {active_theme['font']}; }}
+    .player-container {{ display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }}
+    .icon-box {{ background: {active_theme['box']}; border: {active_theme['border']}; border-radius: {active_theme['border_radius']}; padding: 10px; width: 120px; text-align: center; font-size: 0.85rem; font-weight: bold; color: #333333; }}
+    .dead-box {{ background: #dddddd; border: 2px solid #999999; border-radius: {active_theme['border_radius']}; padding: 10px; width: 120px; text-align: center; font-size: 0.85rem; color: #777777; text-decoration: line-through; opacity: 0.7; }}
+    .chat-bubble {{ background: {active_theme['bubble_bg']}; border-left: 5px solid {active_theme['primary']}; padding: 15px; margin-bottom: 10px; border-radius: {active_theme['border_radius']}; box-shadow: 1px 1px 4px rgba(0,0,0,0.05); font-size: 0.95rem; }}
+    .sys-bubble {{ background: #e8c3c3; border: 1px solid #cc0000; padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: center; font-weight: bold; color: #cc0000; }}
+    .summary-box {{ background: {active_theme['box']}; padding: 15px; border-radius: {active_theme['border_radius']}; margin-bottom: 20px; border: {active_theme['border']}; }}
+</style>
+""", unsafe_allow_html=True)
+
+# --- SIDEBAR: ARCHIVES ---
+with st.sidebar:
+    st.header("📜 Archives")
+    if st.session_state.day > 1:
+        for d in range(1, st.session_state.day):
+            with st.expander(f"Day {d} Log"):
+                for item in st.session_state.daily_transcripts[d]:
+                    if item['speaker'] == "SYSTEM":
+                        st.markdown(f"<div class='sys-bubble'>{item['text']}</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<div class='chat-bubble'><b>{item['speaker']}:</b> {item['text']}</div>", unsafe_allow_html=True)
+    else:
+        st.write("No past archives yet.")
+
+st.title("⚖️ The Hidden Inquiry")
+
+# --- 1. SETUP PHASE ---
+if st.session_state.game_phase == 'setup':
+    st.write("### Prepare the Board")
+    player_count = st.slider("Number of Suspects (4 to 12)", 4, 12, 6)
+    theme_choice = st.selectbox("Choose your Divine Aspect", list(THEMES.keys()))
+    
+    if st.button("Begin the Mystery", use_container_width=True):
+        selected_chars = random.sample(CHARACTERS_DB, player_count)
+        roles = ['Detective', 'Killer'] + ['Innocent'] * (player_count - 2)
+        random.shuffle(roles)
+        
+        for i, char_data in enumerate(selected_chars):
+            st.session_state.players[char_data['name']] = {
+                'role': roles[i], 
+                'status': 'alive',
+                'style': char_data['style'],
+                'model': random.choice(AVAILABLE_MODELS)
+            }
+        
+        st.session_state.theme_choice = theme_choice
+        st.session_state.game_phase = 'prologue'
+        st.rerun()
+
+# --- CONSTANT HUD ---
+if st.session_state.game_phase != 'setup':
+    html_roster = "<div class='player-container'>"
+    for char, data in st.session_state.players.items():
+        # Models are now hidden! Only the name is shown.
+        if data['status'] == 'alive':
+            html_roster += f"<div class='icon-box'>👤<br>{char}</div>"
+        else:
+            html_roster += f"<div class='dead-box'>💀<br>{char}</div>"
+    html_roster += "</div><hr>"
+    st.markdown(html_roster, unsafe_allow_html=True)
+
+# --- 2. PROLOGUE ---
+if st.session_state.game_phase == 'prologue':
+    st.markdown(f"<div class='chat-bubble'><em>{active_theme['prologue']}</em></div>", unsafe_allow_html=True)
+    if st.button("Step into the Interrogation Room", use_container_width=True):
+        st.session_state.game_phase = 'day_interrogation'
+        st.rerun()
+
+# --- 3. DAY PHASE ---
+elif st.session_state.game_phase == 'day_interrogation':
+    alive_players = get_alive_players()
+    
+    if st.session_state.day in st.session_state.summaries:
+        st.markdown("### 📌 Recap of Yesterday")
+        st.markdown(f"<div class='summary-box'>{st.session_state.summaries[st.session_state.day]}</div>", unsafe_allow_html=True)
+
+    if not st.session_state.daily_order:
+        detective_name = [k for k, v in alive_players.items() if v['role'] == 'Detective'][0]
+        others = [k for k in alive_players.keys() if k != detective_name]
+        
+        if len(alive_players) > 6:
+            num_speakers = max(3, len(alive_players) // 3)
+            chosen_others = random.sample(others, num_speakers - 1)
+        else:
+            chosen_others = others
+            random.shuffle(chosen_others)
+            
+        st.session_state.daily_order = [detective_name] + chosen_others
+        st.session_state.speaker_idx = 0
+
+    # Render Today's Log (Properly Bolding HTML)
+    if st.session_state.daily_transcripts[st.session_state.day]:
+        st.markdown(f"### Day {st.session_state.day} Log")
+        for item in st.session_state.daily_transcripts[st.session_state.day]:
+            if item['speaker'] == "SYSTEM":
+                st.markdown(f"<div class='sys-bubble'>{item['text']}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='chat-bubble'><b>{item['speaker']}:</b> {item['text']}</div>", unsafe_allow_html=True)
+
+    if st.session_state.speaker_idx < len(st.session_state.daily_order):
+        current_speaker = st.session_state.daily_order[st.session_state.speaker_idx]
+        player_data = st.session_state.players[current_speaker]
+        
+        if st.button(f"Let {current_speaker} Speak", type="primary", use_container_width=True):
+            sys_p = format_prompt(current_speaker, player_data['role'], player_data['style'])
+            if player_data['role'] == 'Detective' and st.session_state.god_whispers:
+                sys_p += f"\n\nDIVINE KNOWLEDGE: {st.session_state.god_whispers[-1]}"
+                
+            formatted_log = format_transcript_for_prompt(st.session_state.day)
+            user_p = f"Transcript so far:\n{formatted_log}\n\nWhat do you say?"
+            
+            with st.spinner(f"{current_speaker} is formulating their words..."):
+                speaker_container = st.empty()
+                raw_line = speaker_container.write_stream(stream_llm_response(player_data['model'], sys_p, user_p))
+                
+            clean_line = clean_llm_output(raw_line, current_speaker)
+            
+            # Save properly structured dict to state for flawless bold rendering
+            st.session_state.daily_transcripts[st.session_state.day].append({
+                "speaker": current_speaker,
+                "text": clean_line
+            })
+            st.session_state.speaker_idx += 1
+            st.rerun()
+    else:
+        if st.button("The room falls silent. Proceed to Accusations.", use_container_width=True):
+            st.session_state.game_phase = 'detective_guess_eval'
+            st.rerun()
+
+# --- 4. STRICT DETECTIVE EVALUATION ---
+elif st.session_state.game_phase == 'detective_guess_eval':
+    alive_players = get_alive_players()
+    killer_name = [k for k, v in st.session_state.players.items() if v['role'] == 'Killer'][0]
+    detective_name = [k for k, v in alive_players.items() if v['role'] == 'Detective'][0]
+    suspects = [k for k in alive_players.keys() if k != detective_name]
+    
+    with st.spinner("The hidden Detective is reviewing the evidence..."):
+        sys_p = f"You are the Detective. You MUST choose EXACTLY ONE name from this list: {', '.join(suspects)}. Do not explain your reasoning. Output just the name."
+        formatted_log = format_transcript_for_prompt(st.session_state.day)
+        user_p = f"Transcript:\n{formatted_log}\n\nWho is the killer? Name only."
+        
+        guess_resp = ollama.chat(model=st.session_state.players[detective_name]['model'], messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+        raw_guess = guess_resp['message']['content'].strip()
+
+        # Robust Parsing Engine: Prevent the "Paragraph Exploit"
+        mentioned = [s for s in suspects if s.lower() in raw_guess.lower()]
+        if len(mentioned) == 1:
+            final_guess = mentioned[0] # They picked exactly one person
+        elif len(mentioned) > 1:
+            final_guess = random.choice(mentioned) # They over-explained and listed multiples; force a choice.
+        else:
+            final_guess = random.choice(suspects) # They completely failed to format; random guess fallback.
+
+    st.markdown("### The Accusation")
+    st.markdown(f"<div class='chat-bubble'>The hidden Detective officially suspects: <b>{final_guess}</b></div>", unsafe_allow_html=True)
+    
+    if final_guess == killer_name:
+        st.success("The Detective deduced correctly! The Killer is cornered!")
+        if st.button("Reveal the Truth", use_container_width=True):
+            st.session_state.game_phase = 'game_over_win'
+            st.rerun()
+    else:
+        st.error("The Detective's guess was incorrect... The Killer remains hidden.")
+        if st.button("Intervene before Night Falls (God Phase)", use_container_width=True):
+            st.session_state.game_phase = 'god_phase'
+            st.rerun()
+
+# --- 5. GOD PHASE ---
+elif st.session_state.game_phase == 'god_phase':
+    st.write("### 🌩️ Divine Intervention")
+    target = st.selectbox("Select a mortal to point the Detective toward:", list(get_alive_players().keys()))
+    
+    if st.button("Cast Your Whisper", use_container_width=True):
+        flavor_text = active_theme['god_prompt'].format(suspect=target)
+        st.session_state.god_whispers.append(flavor_text)
+        st.success(f"You whispered into the ether: '{flavor_text}'")
+        time.sleep(2)
+        st.session_state.game_phase = 'night_phase'
+        st.rerun()
+
+# --- 6. NIGHT PHASE ---
+elif st.session_state.game_phase == 'night_phase':
+    st.write("### 🌑 Night Falls...")
+    if st.button("Let the Hidden Killer Strike", use_container_width=True):
+        with st.spinner("Blood is being spilled..."):
+            alive_players = get_alive_players()
+            killer_name = [k for k, v in alive_players.items() if v['role'] == 'Killer'][0]
+            killer_model = st.session_state.players[killer_name]['model']
+            potential_victims = [k for k in alive_players.keys() if k != killer_name]
+            
+            sys_p = f"You are the Killer. Choose one person to murder from this list: {', '.join(potential_victims)}. Reply with ONLY their name."
+            formatted_log = format_transcript_for_prompt(st.session_state.day)
+            user_p = f"Transcript:\n{formatted_log}\n\nWho do you kill?"
+            resp = ollama.chat(model=killer_model, messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+            choice = resp['message']['content'].strip()
+            
+            victim = random.choice(potential_victims)
+            for p in potential_victims:
+                if p.lower() in choice.lower():
+                    victim = p
+                    break
+            
+            st.session_state.players[victim]['status'] = 'dead'
+            
+            if st.session_state.players[victim]['role'] == 'Detective':
+                st.session_state.game_phase = 'game_over_loss'
+            else:
+                summary = generate_daily_summary(st.session_state.day, formatted_log)
+                st.session_state.day += 1
+                st.session_state.summaries[st.session_state.day] = summary
+                
+                # Setup new day log
+                st.session_state.daily_transcripts[st.session_state.day] = [{"speaker": "SYSTEM", "text": f"{victim} was found murdered in the night."}]
+                st.session_state.daily_order = [] 
+                st.session_state.game_phase = 'day_interrogation'
+        st.rerun()
+
+# --- 7. ENDING SCREENS ---
+elif st.session_state.game_phase in ['game_over_win', 'game_over_loss']:
+    killer_name = [k for k, v in st.session_state.players.items() if v['role'] == 'Killer'][0]
+    detective_name = [k for k, v in st.session_state.players.items() if v['role'] == 'Detective'][0]
+    
+    st.markdown("## 🎭 THE CURTAIN FALLS")
+    
+    if st.session_state.game_phase == 'game_over_loss':
+        st.error("The hidden Killer successfully assassinated the hidden Detective in the night! The mortals are doomed.")
+    else:
+        st.success("Justice has been served!")
+        
+    st.markdown(f"### **The hidden Detective was:** 🔍 {detective_name}")
+    st.markdown(f"### **The hidden Killer was:** 🔪 {killer_name}")
+    
+    with st.spinner("Extracting the confession..."):
+        sys_p = "You are a dramatic narrator. Reveal the murderer's means, motive, and opportunity."
+        user_p = f"The killer was {killer_name}. Write a 3-sentence summary."
+        resp = ollama.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+        
+    st.info(resp['message']['content'])
+    
+    # NEW: Optional Expander to reveal the AI models used behind the scenes
+    with st.expander("🛠️ Behind the Curtain: Reveal AI Models Used"):
+        st.write("Here are the specific AI models that were powering each character during this game:")
+        for char, data in st.session_state.players.items():
+            role_hint = f" ({data['role']})" if data['role'] in ['Detective', 'Killer'] else ""
+            st.write(f"- **{char}**{role_hint}: `🧠 {data['model']}`")
+
+    if st.button("Start a New Mystery", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()

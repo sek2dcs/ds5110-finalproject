@@ -1,8 +1,9 @@
 import streamlit as st
-import ollama
 import random
 import time
 import re
+import os
+from huggingface_hub import InferenceClient
 
 # --- CONFIGURATION & LORE ---
 # Exactly two models for inter-LLM interaction (No Qwen)
@@ -134,7 +135,7 @@ def format_prompt(char_name, style):
 
 def stream_llm_response(model, sys_prompt, user_prompt):
     messages = [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_prompt}]
-    stream = ollama.chat(model=model, messages=messages, stream=True)
+    stream = client.chat(model=model, messages=messages, stream=True)
     for chunk in stream:
         yield chunk['message']['content']
         time.sleep(0.02)
@@ -142,7 +143,7 @@ def stream_llm_response(model, sys_prompt, user_prompt):
 def generate_daily_summary(day, transcript_text):
     sys_p = "You are a concise narrator. Summarize the key clues from the transcript. Output EXACTLY 3 bullet points. Start each bullet point on a new line with a '-' dash. Do NOT use the bullet dot symbol. Keep language extremely simple."
     user_p = f"Transcript:\n{transcript_text}"
-    resp = ollama.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+    resp = client.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
     content = resp['message']['content'].replace('•', '-')
     return content
 
@@ -357,7 +358,7 @@ elif st.session_state.game_phase == 'detective_guess_eval':
             formatted_log = format_transcript_for_prompt(st.session_state.day)
             user_p = f"Transcript:\n{formatted_log}\n\nWho is the killer? Name only."
             
-            guess_resp = ollama.chat(model=st.session_state.players[detective_name]['model'], messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+            guess_resp = client.chat(model=st.session_state.players[detective_name]['model'], messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
             raw_guess = guess_resp['message']['content'].strip()
 
             mentioned = [s for s in suspects if s.lower() in raw_guess.lower()]
@@ -419,7 +420,7 @@ elif st.session_state.game_phase == 'night_phase':
             sys_p = f"You are the Killer. Choose one person to murder from this list: {', '.join(potential_victims)}. Reply with ONLY their name."
             formatted_log = format_transcript_for_prompt(st.session_state.day)
             user_p = f"Transcript:\n{formatted_log}\n\nWho do you kill?"
-            resp = ollama.chat(model=killer_model, messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+            resp = client.chat(model=killer_model, messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
             choice = resp['message']['content'].strip()
             
             victim = random.choice(potential_victims)
@@ -476,7 +477,7 @@ elif st.session_state.game_phase in ['game_over_win', 'game_over_loss']:
         with st.spinner("Generating the dark epilogue..."):
             sys_p = "You are a dark narrator. Write a 2-paragraph story. Use simple language."
             user_p = f"The killer ({killer_name}) successfully murdered the detective ({detective_name}). Paragraph 1: How {killer_name} got away with it. Paragraph 2: What dark things {killer_name} did with the rest of their life. NO confessions."
-            resp = ollama.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+            resp = client.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
         
     else:
         st.success("Justice has been served!")
@@ -486,7 +487,7 @@ elif st.session_state.game_phase in ['game_over_win', 'game_over_loss']:
         with st.spinner("Extracting the confession and epilogue..."):
             sys_p = "You are an uplifting narrator. Write a 2-paragraph story. Use simple language."
             user_p = f"The detective ({detective_name}) cornered the killer ({killer_name}). Paragraph 1: Detail the killer's exact Means, Motive, and Opportunity. Paragraph 2: What uplifting things the Detective did with the rest of their life."
-            resp = ollama.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+            resp = client.chat(model='llama3:8b', messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
         
     st.markdown(f"<div class='summary-box'>{resp['message']['content']}</div>", unsafe_allow_html=True)
     

@@ -141,19 +141,28 @@ def format_prompt(char_name, style):
         
     return base
 
-# ENGINE UPDATE: Sending prompts to Hugging Face
+# --- CLOUD ENGINE FUNCTIONS ---
 def stream_llm_response(sys_prompt, user_prompt):
     messages = [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_prompt}]
-    stream = client.chat_completion(model=MODEL, messages=messages, stream=True)
+    
+    stream = client.chat.completions.create(
+        model=MODEL, 
+        messages=messages, 
+        stream=True
+    )
     for chunk in stream:
-        if chunk.choices[0].delta.content:
+        if chunk.choices[0].delta.content is not None:
             yield chunk.choices[0].delta.content
             time.sleep(0.02)
 
 def generate_daily_summary(day, transcript_text):
     sys_p = "You are a concise narrator. Summarize the key clues from the transcript. Output EXACTLY 3 bullet points. Start each bullet point on a new line with a '-' dash. Do NOT use the bullet dot symbol. Keep language extremely simple."
     user_p = f"Transcript:\n{transcript_text}"
-    resp = client.chat_completion(model=MODEL, messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}])
+    
+    resp = client.chat.completions.create(
+        model=MODEL, 
+        messages=[{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': user_p}]
+    )
     content = resp.choices[0].message.content.replace('•', '-')
     return content
 

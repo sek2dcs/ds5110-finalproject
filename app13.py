@@ -11,21 +11,21 @@ client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=api_key,
 )
-# --- MODEL POOLS (ALLOWED ENDPOINTS) ---
-# Translating the allowed models into OpenRouter's API ID format
+
+# --- MODEL POOLS (VERIFIED ALLOWLIST) ---
 MASTERMIND_MODELS = [
-    "qwen/qwen-3.6-plus",         # Strong reasoning for Killer/Detective
-    "gpt-oss/gpt-oss-120b:free"   # Massive parameter count for logic
+    "qwen/qwen3.6-plus"          # Exact ID for Qwen3.6 Plus
 ]
 
 STANDARD_MODELS = [
-    "zhipu/glm-5",                # Fast and reliable for standard dialogue
-    "moonshotai/kimi-k2.5"        # Good conversational grounding
+    "z-ai/glm-5",                # Exact ID for GLM 5
+    "moonshotai/kimi-k2.5"       # Exact ID for Kimi K2.5
 ]
 
 WILDCARD_MODELS = [
-    "minimax/minimax-m2.7"        # Great for eccentric/paranoid character flavor
+    "minimax/minimax-m2.7"       # Exact ID for MiniMax M2.7
 ]
+
 
 # --- CONFIGURATION & LORE ---
 CHARACTERS_DB = [

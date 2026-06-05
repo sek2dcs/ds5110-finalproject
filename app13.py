@@ -5,12 +5,18 @@ import re
 import os
 from openai import OpenAI
 
-# --- ENGINE SETUP (OPENROUTER) ---
-api_key = os.environ.get("OPENROUTER_API_KEY")
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=api_key,
-)
+# --- OPTIMIZED ENGINE SETUP ---
+# @st.cache_resource keeps the API connection open in the background
+# so Streamlit doesn't have to rebuild it on every single button click.
+@st.cache_resource
+def get_openai_client():
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+
+client = get_openai_client()
 
 # --- MODEL POOLS (VERIFIED ALLOWLIST) ---
 MASTERMIND_MODELS = [
@@ -26,61 +32,68 @@ WILDCARD_MODELS = [
     "minimax/minimax-m2.7"       # Exact ID for MiniMax M2.7
 ]
 
-
-# --- CONFIGURATION & LORE ---
-CHARACTERS_DB = [
-    {"name": "Arthur the Butler", "style": "Formal and dry. Short sentences."},
-    {"name": "Beatrice the Widow", "style": "Melodramatic and weeping."},
-    {"name": "Charles the Doctor", "style": "Clinical and precise."},
-    {"name": "Diana the Heiress", "style": "Snobby and bored."},
-    {"name": "Edward the Chauffeur", "style": "Gruff and blunt."},
-    {"name": "Fiona the Maid", "style": "Nervous and apologetic."},
-    {"name": "George the Chef", "style": "Passionate and loud."},
-    {"name": "Helen the Governess", "style": "Stern and reprimanding."},
-    {"name": "Isaac the Clockmaker", "style": "Fixated on time."},
-    {"name": "Josephine the Singer", "style": "Dramatic and poetic."},
-    {"name": "Karl the Groundsman", "style": "Paranoid and defensive."},
-    {"name": "Lydia the Journalist", "style": "Inquisitive and fast-talking."},
-    {"name": "Reginald the Earl", "style": "Pompous and arrogant."},
-    {"name": "Silas the Smuggler", "style": "Cryptic and suspicious."},
-    {"name": "Clara the Niece", "style": "Naive and optimistic."},
-    {"name": "Major Sterling", "style": "Barks short military sentences."},
-    {"name": "Julian the Painter", "style": "Dramatic and descriptive."},
-    {"name": "Eleanor the Socialite", "style": "Passive-aggressive."},
-    {"name": "Professor Vance", "style": "Overly academic and correcting."},
-    {"name": "Victor the Lawyer", "style": "Legalistic and defensive."},
-    {"name": "Martha the Cook", "style": "Motherly but gossipy."},
-    {"name": "Baron Von Althaus", "style": "Formal and proud."},
-    {"name": "Tobias the Stableboy", "style": "Simple and deferential."},
-    {"name": "Madame Zara", "style": "Cryptic and mysterious."},
-    {"name": "Marcus the Mayor", "style": "Diplomatic and evasive."},
-    {"name": "Nora the Seamstress", "style": "Quiet and observant."},
-    {"name": "Oliver the Blacksmith", "style": "Booming and direct."},
-    {"name": "Penelope the Astrologer", "style": "Dreamy and cosmic."},
-    {"name": "Quentin the Banker", "style": "Obsessed with money."},
-    {"name": "Rose the Botanist", "style": "Sweet but morbid."}
-]
-
-THEMES = {
-    "The Omniscient Magistrate": {
-        "god_prompt": "{suspect} is lying about their whereabouts. Press them.",
-        "bg": "#f4f6f9", "box": "#ffffff", "primary": "#2c3e50", "border": "2px solid #2c3e50",
-        "font": "Georgia, serif", "bubble_bg": "#ffffff", "border_radius": "5px",
-        "button_bg": "#2c3e50", "button_text": "#ffffff", "button_hover": "#1a252f", "button_radius": "5px"
-    },
-    "The Eldritch Watcher": {
-        "god_prompt": "A whisper from the void: {suspect} is masking their guilt. Confront them.",
-        "bg": "#111412", "box": "#1e2621", "primary": "#43a047", "border": "2px dashed #43a047",
-        "font": "'Courier New', Courier, monospace", "bubble_bg": "#1e2621", "border_radius": "0px",
-        "button_bg": "#1b5e20", "button_text": "#a5d6a7", "button_hover": "#43a047", "button_radius": "0px"
-    },
-    "The Olympian": {
-        "god_prompt": "Athena's wisdom reveals {suspect} is hiding the truth. Uncover it.",
-        "bg": "#fdfbf7", "box": "#fcf5e3", "primary": "#b8860b", "border": "3px double #b8860b",
-        "font": "'Palatino Linotype', 'Book Antiqua', Palatino, serif", "bubble_bg": "#fcf5e3", "border_radius": "15px",
-        "button_bg": "#b8860b", "button_text": "#ffffff", "button_hover": "#daa520", "button_radius": "20px"
+# --- OPTIMIZED CONFIGURATION ---
+# @st.cache_data prevents Streamlit from rebuilding these huge lists 
+# in memory every time the script reruns.
+@st.cache_data
+def load_game_data():
+    characters = [
+        {"name": "Arthur the Butler", "style": "Formal and dry. Short sentences."},
+        {"name": "Beatrice the Widow", "style": "Melodramatic and weeping."},
+        {"name": "Charles the Doctor", "style": "Clinical and precise."},
+        {"name": "Diana the Heiress", "style": "Snobby and bored."},
+        {"name": "Edward the Chauffeur", "style": "Gruff and blunt."},
+        {"name": "Fiona the Maid", "style": "Nervous and apologetic."},
+        {"name": "George the Chef", "style": "Passionate and loud."},
+        {"name": "Helen the Governess", "style": "Stern and reprimanding."},
+        {"name": "Isaac the Clockmaker", "style": "Fixated on time."},
+        {"name": "Josephine the Singer", "style": "Dramatic and poetic."},
+        {"name": "Karl the Groundsman", "style": "Paranoid and defensive."},
+        {"name": "Lydia the Journalist", "style": "Inquisitive and fast-talking."},
+        {"name": "Reginald the Earl", "style": "Pompous and arrogant."},
+        {"name": "Silas the Smuggler", "style": "Cryptic and suspicious."},
+        {"name": "Clara the Niece", "style": "Naive and optimistic."},
+        {"name": "Major Sterling", "style": "Barks short military sentences."},
+        {"name": "Julian the Painter", "style": "Dramatic and descriptive."},
+        {"name": "Eleanor the Socialite", "style": "Passive-aggressive."},
+        {"name": "Professor Vance", "style": "Overly academic and correcting."},
+        {"name": "Victor the Lawyer", "style": "Legalistic and defensive."},
+        {"name": "Martha the Cook", "style": "Motherly but gossipy."},
+        {"name": "Baron Von Althaus", "style": "Formal and proud."},
+        {"name": "Tobias the Stableboy", "style": "Simple and deferential."},
+        {"name": "Madame Zara", "style": "Cryptic and mysterious."},
+        {"name": "Marcus the Mayor", "style": "Diplomatic and evasive."},
+        {"name": "Nora the Seamstress", "style": "Quiet and observant."},
+        {"name": "Oliver the Blacksmith", "style": "Booming and direct."},
+        {"name": "Penelope the Astrologer", "style": "Dreamy and cosmic."},
+        {"name": "Quentin the Banker", "style": "Obsessed with money."},
+        {"name": "Rose the Botanist", "style": "Sweet but morbid."}
+    ]
+    
+    themes = {
+        "The Omniscient Magistrate": {
+            "god_prompt": "{suspect} is lying about their whereabouts. Press them.",
+            "bg": "#f4f6f9", "box": "#ffffff", "primary": "#2c3e50", "border": "2px solid #2c3e50",
+            "font": "Georgia, serif", "bubble_bg": "#ffffff", "border_radius": "5px",
+            "button_bg": "#2c3e50", "button_text": "#ffffff", "button_hover": "#1a252f", "button_radius": "5px"
+        },
+        "The Eldritch Watcher": {
+            "god_prompt": "A whisper from the void: {suspect} is masking their guilt. Confront them.",
+            "bg": "#111412", "box": "#1e2621", "primary": "#43a047", "border": "2px dashed #43a047",
+            "font": "'Courier New', Courier, monospace", "bubble_bg": "#1e2621", "border_radius": "0px",
+            "button_bg": "#1b5e20", "button_text": "#a5d6a7", "button_hover": "#43a047", "button_radius": "0px"
+        },
+        "The Olympian": {
+            "god_prompt": "Athena's wisdom reveals {suspect} is hiding the truth. Uncover it.",
+            "bg": "#fdfbf7", "box": "#fcf5e3", "primary": "#b8860b", "border": "3px double #b8860b",
+            "font": "'Palatino Linotype', 'Book Antiqua', Palatino, serif", "bubble_bg": "#fcf5e3", "border_radius": "15px",
+            "button_bg": "#b8860b", "button_text": "#ffffff", "button_hover": "#daa520", "button_radius": "20px"
+        }
     }
-}
+    
+    return characters, themes
+
+CHARACTERS_DB, THEMES = load_game_data()
 
 VICTIMS = ["Lord Blackwood", "Lady Ashbury", "Professor Sterling", "Countess Richtofen", "Sir Vance"]
 CAUSES = ["poisoned with rare hemlock", "bludgeoned with a brass candlestick", "thrown from the balcony", "strangled with a velvet cord", "stabbed with a letter opener"]
@@ -152,7 +165,6 @@ def format_prompt(char_name, style):
         
     return base
 
-# ENGINE UPDATE: Sending prompts to OpenRouter
 def stream_llm_response(model_id, sys_prompt, user_prompt):
     messages = [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_prompt}]
     

@@ -4,10 +4,16 @@ import time
 import re
 import os
 from huggingface_hub import InferenceClient
+from openai import OpenAI  # Swapped from huggingface_hub
 
-# --- ENGINE SETUP (HUGGING FACE) ---
-hf_token = os.environ.get("HF_TOKEN")
-client = InferenceClient(token=hf_token)
+# --- ENGINE SETUP (OPENROUTER) ---
+api_key = os.environ.get("OPENROUTER_API_KEY")
+
+# Tell the OpenAI client to route traffic to OpenRouter instead
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key,
+)
 MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 # --- CONFIGURATION & LORE ---

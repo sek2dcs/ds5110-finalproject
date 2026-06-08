@@ -1,0 +1,92 @@
+/* --- BASE STYLES & MAGISTRATE (DEFAULT) THEME --- */
+body {
+  background-color: #0d1117; color: #c9d1d9; font-family: sans-serif;
+  transition: all 0.5s ease; margin: 0; padding: 20px;
+}
+.container { margin: 0 auto; }
+h1 { text-align: center; margin-bottom: 5px; }
+.subtitle { text-align: center; margin-bottom: 30px; font-style: italic; opacity: 0.7; }
+
+.game-container { display: flex; max-width: 1200px; margin: 0 auto; gap: 20px; }
+.panel {
+  background-color: rgba(22, 27, 34, 0.9); border-radius: 10px;
+  padding: 20px; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.cast-panel { flex: 1; }
+.chat-panel { flex: 2; }
+
+/* Setup Screen Elements */
+.setup-input {
+  width: 100%; padding: 10px; background: rgba(0,0,0,0.3); color: inherit;
+  border: 1px solid currentColor; border-radius: 4px; box-sizing: border-box; font-size: 1rem;
+}
+
+/* Roster */
+.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+.character-card { background-color: rgba(0, 0, 0, 0.2); border: 1px solid #30363d; border-radius: 8px; padding: 15px 5px; text-align: center; }
+.character-card.dead { opacity: 0.5; filter: grayscale(100%); border-color: #cc0000; }
+.char-emoji { font-size: 2rem; margin-bottom: 10px; }
+.char-name { font-size: 0.85rem; font-weight: bold; }
+
+/* Chat */
+.chat-log { height: 450px; overflow-y: auto; border: 1px solid #30363d; background-color: rgba(0, 0, 0, 0.2); border-radius: 5px; padding: 15px; margin-bottom: 15px; }
+.sys-bubble { background-color: rgba(204, 0, 0, 0.15); color: #ff9999; padding: 10px; border: 1px solid #cc0000; border-radius: 4px; text-align: center; font-weight: bold; margin-bottom: 15px; }
+.whisper-bubble { background-color: rgba(227, 179, 65, 0.15); color: #e3b341; padding: 10px; border: 1px dashed #e3b341; border-radius: 4px; font-style: italic; margin-bottom: 15px; }
+.chat-bubble { padding: 12px; margin-bottom: 15px; background-color: rgba(33, 38, 45, 0.8); border-left: 4px solid #8b949e; border-radius: 4px; }
+.chat-header { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3px; }
+.chat-text { font-style: italic; font-size: 1rem; line-height: 1.4; }
+
+/* Buttons */
+.action-area { display: flex; gap: 10px; }
+.primary-btn { flex: 1; padding: 12px; background: transparent; border: 1px solid #e3b341; color: #e3b341; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+.primary-btn:hover { background-color: rgba(227, 179, 65, 0.1); }
+.primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.secondary-btn { padding: 5px 10px; background: transparent; border: 1px solid #8b949e; color: #8b949e; border-radius: 4px; cursor: pointer; font-size: 0.8rem;}
+.secondary-btn:hover { background: rgba(255,255,255,0.1); }
+
+/* --- NOTEBOOK LAYOUT --- */
+.fab-notepad { position: fixed; bottom: 30px; right: 30px; background-color: #e3b341; color: #0d1117; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 999; }
+.notebook-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+.notebook { background-color: #161b22; width: 90%; max-width: 900px; height: 80vh; border-radius: 10px; border: 1px solid #30363d; display: flex; flex-direction: column; overflow: hidden; }
+.notebook-header { display: flex; justify-content: space-between; padding: 15px 20px; background-color: #0d1117; border-bottom: 1px solid #30363d;}
+.close-notebook { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+.tabs { display: flex; background: #0d1117; border-bottom: 1px solid #30363d; }
+.tab-btn { flex: 1; padding: 15px; background: transparent; border: none; color: #8b949e; cursor: pointer; font-weight: bold; }
+.tab-btn.active { color: #e3b341; border-bottom: 3px solid #e3b341; background: #161b22; }
+
+.tab-content { display: none; flex: 1; overflow: hidden; }
+.tab-content.active { display: flex; }
+.notes-sidebar { width: 250px; border-right: 1px solid #30363d; padding: 20px; background: rgba(0,0,0,0.2); }
+.notes-main { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+
+.suspect-mini-grid { display: flex; flex-direction: column; gap: 10px; }
+.mini-card { border: 1px solid #30363d; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 5px; }
+.mini-card.active { border-color: #e3b341; background: rgba(227, 179, 65, 0.1); }
+.mini-card.dead { opacity: 0.5; text-decoration: line-through; border-color: #cc0000; }
+
+/* The physical paper look */
+.journal-paper {
+  flex: 1; background: #fdfbf7; color: #2c2c2c; font-family: 'Courier New', Courier, monospace;
+  font-size: 1.1rem; line-height: 1.8; border: 1px solid #d0c8b0; padding: 20px; border-radius: 4px;
+  resize: none; background-image: repeating-linear-gradient(transparent, transparent 31px, #e0d8c0 31px, #e0d8c0 32px);
+  background-attachment: local;
+}
+
+/* --- THE ELDRITCH WATCHER THEME --- */
+body.theme-eldritch {
+  background-color: #050a05 !important;
+  background-image: repeating-linear-gradient(45deg, #0a140a 25%, transparent 25%, transparent 75%, #0a140a 75%, #0a140a), repeating-linear-gradient(135deg, #0a140a 25%, #050a05 25%, #050a05 75%, #0a140a 75%, #0a140a) !important;
+  background-size: 40px 40px !important; color: #66ff66 !important; font-family: 'Eczar', serif !important;
+}
+body.theme-eldritch .panel, body.theme-eldritch .notebook, body.theme-eldritch .tab-btn.active { background-color: rgba(5, 15, 5, 0.95) !important; border-color: #2e8b57 !important; }
+body.theme-eldritch .chat-bubble { background-color: rgba(10, 30, 10, 0.8) !important; border-left-color: #43a047 !important; }
+body.theme-eldritch .primary-btn, body.theme-eldritch .tab-btn.active { border-color: #43a047 !important; color: #43a047 !important; }
+
+/* --- THE OLYMPIAN THEME --- */
+body.theme-olympian {
+  background: linear-gradient(135deg, #fdfbf7 0%, #e0d6c8 100%) !important; color: #5c4033 !important; font-family: 'Cinzel', serif !important;
+}
+body.theme-olympian .panel, body.theme-olympian .notebook, body.theme-olympian .tab-btn.active { background-color: rgba(255, 255, 255, 0.85) !important; border-color: #b8860b !important; }
+body.theme-olympian .chat-bubble { background-color: rgba(245, 240, 225, 0.9) !important; border-left-color: #b8860b !important; }
+body.theme-olympian .primary-btn, body.theme-olympian .tab-btn.active { border-color: #b8860b !important; color: #b8860b !important; font-weight: bold; }

@@ -1,92 +1,454 @@
-/* --- BASE STYLES & MAGISTRATE (DEFAULT) THEME --- */
+/* =========================================
+   BASE STYLES & LAYOUT
+========================================= */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background-color: #0d1117; color: #c9d1d9; font-family: sans-serif;
-  transition: all 0.5s ease; margin: 0; padding: 20px;
-}
-.container { margin: 0 auto; }
-h1 { text-align: center; margin-bottom: 5px; }
-.subtitle { text-align: center; margin-bottom: 30px; font-style: italic; opacity: 0.7; }
-
-.game-container { display: flex; max-width: 1200px; margin: 0 auto; gap: 20px; }
-.panel {
-  background-color: rgba(22, 27, 34, 0.9); border-radius: 10px;
-  padding: 20px; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-}
-.cast-panel { flex: 1; }
-.chat-panel { flex: 2; }
-
-/* Setup Screen Elements */
-.setup-input {
-  width: 100%; padding: 10px; background: rgba(0,0,0,0.3); color: inherit;
-  border: 1px solid currentColor; border-radius: 4px; box-sizing: border-box; font-size: 1rem;
+  margin: 0;
+  min-height: 100vh;
+  transition: background 0.5s ease, color 0.5s ease;
+  overflow-x: hidden;
 }
 
-/* Roster */
-.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
-.character-card { background-color: rgba(0, 0, 0, 0.2); border: 1px solid #30363d; border-radius: 8px; padding: 15px 5px; text-align: center; }
-.character-card.dead { opacity: 0.5; filter: grayscale(100%); border-color: #cc0000; }
-.char-emoji { font-size: 2rem; margin-bottom: 10px; }
-.char-name { font-size: 0.85rem; font-weight: bold; }
-
-/* Chat */
-.chat-log { height: 450px; overflow-y: auto; border: 1px solid #30363d; background-color: rgba(0, 0, 0, 0.2); border-radius: 5px; padding: 15px; margin-bottom: 15px; }
-.sys-bubble { background-color: rgba(204, 0, 0, 0.15); color: #ff9999; padding: 10px; border: 1px solid #cc0000; border-radius: 4px; text-align: center; font-weight: bold; margin-bottom: 15px; }
-.whisper-bubble { background-color: rgba(227, 179, 65, 0.15); color: #e3b341; padding: 10px; border: 1px dashed #e3b341; border-radius: 4px; font-style: italic; margin-bottom: 15px; }
-.chat-bubble { padding: 12px; margin-bottom: 15px; background-color: rgba(33, 38, 45, 0.8); border-left: 4px solid #8b949e; border-radius: 4px; }
-.chat-header { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3px; }
-.chat-text { font-style: italic; font-size: 1rem; line-height: 1.4; }
-
-/* Buttons */
-.action-area { display: flex; gap: 10px; }
-.primary-btn { flex: 1; padding: 12px; background: transparent; border: 1px solid #e3b341; color: #e3b341; border-radius: 5px; cursor: pointer; transition: 0.2s; }
-.primary-btn:hover { background-color: rgba(227, 179, 65, 0.1); }
-.primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.secondary-btn { padding: 5px 10px; background: transparent; border: 1px solid #8b949e; color: #8b949e; border-radius: 4px; cursor: pointer; font-size: 0.8rem;}
-.secondary-btn:hover { background: rgba(255,255,255,0.1); }
-
-/* --- NOTEBOOK LAYOUT --- */
-.fab-notepad { position: fixed; bottom: 30px; right: 30px; background-color: #e3b341; color: #0d1117; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 999; }
-.notebook-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
-.notebook { background-color: #161b22; width: 90%; max-width: 900px; height: 80vh; border-radius: 10px; border: 1px solid #30363d; display: flex; flex-direction: column; overflow: hidden; }
-.notebook-header { display: flex; justify-content: space-between; padding: 15px 20px; background-color: #0d1117; border-bottom: 1px solid #30363d;}
-.close-notebook { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
-
-.tabs { display: flex; background: #0d1117; border-bottom: 1px solid #30363d; }
-.tab-btn { flex: 1; padding: 15px; background: transparent; border: none; color: #8b949e; cursor: pointer; font-weight: bold; }
-.tab-btn.active { color: #e3b341; border-bottom: 3px solid #e3b341; background: #161b22; }
-
-.tab-content { display: none; flex: 1; overflow: hidden; }
-.tab-content.active { display: flex; }
-.notes-sidebar { width: 250px; border-right: 1px solid #30363d; padding: 20px; background: rgba(0,0,0,0.2); }
-.notes-main { flex: 1; display: flex; flex-direction: column; padding: 20px; }
-
-.suspect-mini-grid { display: flex; flex-direction: column; gap: 10px; }
-.mini-card { border: 1px solid #30363d; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 5px; }
-.mini-card.active { border-color: #e3b341; background: rgba(227, 179, 65, 0.1); }
-.mini-card.dead { opacity: 0.5; text-decoration: line-through; border-color: #cc0000; }
-
-/* The physical paper look */
-.journal-paper {
-  flex: 1; background: #fdfbf7; color: #2c2c2c; font-family: 'Courier New', Courier, monospace;
-  font-size: 1.1rem; line-height: 1.8; border: 1px solid #d0c8b0; padding: 20px; border-radius: 4px;
-  resize: none; background-image: repeating-linear-gradient(transparent, transparent 31px, #e0d8c0 31px, #e0d8c0 32px);
-  background-attachment: local;
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-/* --- THE ELDRITCH WATCHER THEME --- */
+.game-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 65vh;
+}
+
+.chat-log {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.action-area {
+  display: flex;
+  gap: 10px;
+}
+
+.action-area button {
+  flex: 1;
+}
+
+/* =========================================
+   COMPONENTS (Cards, Bubbles, Inputs)
+========================================= */
+.setup-input, .journal-paper {
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: inherit;
+  font-family: inherit;
+}
+
+.roster-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.character-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 15px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 5px;
+  border-left: 3px solid transparent;
+}
+
+.character-card.dead {
+  opacity: 0.5;
+  text-decoration: line-through;
+  border-left-color: #cc0000;
+}
+
+.mini-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  margin-bottom: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+.mini-card:hover {
+  background: rgba(0,0,0,0.4);
+}
+
+.mini-card.active {
+  background: rgba(255,255,255,0.15);
+  border-left: 3px solid currentColor;
+}
+
+.mini-card.dead {
+  opacity: 0.5;
+}
+
+.char-emoji {
+  font-size: 1.5rem;
+}
+
+/* Chat Bubbles */
+.chat-bubble {
+  padding: 15px;
+  max-width: 90%;
+  align-self: flex-start;
+  transition: all 0.3s ease;
+}
+
+.chat-header {
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  opacity: 0.8;
+}
+
+.sys-bubble, .whisper-bubble {
+  text-align: center;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 5px;
+  font-size: 0.95rem;
+}
+
+.sys-bubble { border: 1px solid currentColor; }
+
+/* Notebook / Modals */
+.fab-notepad {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  font-size: 2rem;
+  background: rgba(15, 15, 18, 0.9);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 65px;
+  height: 65px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+.fab-notepad:hover {
+  transform: scale(1.1);
+}
+
+.notebook-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.notebook {
+  width: 900px;
+  max-width: 95vw;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+#whisperModal .notebook, #introModal .notebook {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+#notebookOverlay .notebook {
+  height: 85vh;
+  padding: 25px;
+}
+
+.notebook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.close-notebook {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.close-notebook:hover { opacity: 1; }
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+.tab-btn.active {
+  background: rgba(255,255,255,0.1);
+  border-color: currentColor;
+}
+
+.tab-content {
+  display: none;
+  gap: 20px;
+  flex-grow: 1;
+  height: 100%;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+.notes-sidebar {
+  width: 280px;
+  background: rgba(0,0,0,0.2);
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.notes-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================================
+   MASTER BUTTON STYLING (BASE)
+========================================= */
+.primary-btn {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+  padding: 12px 20px;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glassmorphism for panels so backgrounds peek through */
+.panel, .notebook {
+  background: rgba(15, 15, 18, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================================
+   THEME 1: THE MAGISTRATE (Default)
+   Vibe: Formal, Gothic, Dark Academia, Blood & Iron
+========================================= */
+body.theme-magistrate {
+  font-family: 'Eczar', serif;
+  background-color: #121212;
+  color: #d1d1d1;
+  /* Sharp, formal pinstripe/gothic wallpaper pattern */
+  background-image: 
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+body.theme-magistrate h1, 
+body.theme-magistrate h2, 
+body.theme-magistrate h3 {
+  font-family: 'Cinzel', serif;
+  color: #e3b341;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+body.theme-magistrate .primary-btn {
+  border-color: #8b0000;
+  color: #e3b341;
+  background: linear-gradient(45deg, #1a0000, #330000);
+  box-shadow: inset 0 0 10px rgba(139, 0, 0, 0.5), 0 4px 6px rgba(0,0,0,0.6);
+  border-radius: 2px;
+}
+
+body.theme-magistrate .primary-btn:hover:not(:disabled) {
+  background: linear-gradient(45deg, #330000, #660000);
+  box-shadow: inset 0 0 15px rgba(255, 0, 0, 0.5), 0 0 15px rgba(139, 0, 0, 0.8);
+  transform: translateY(-2px);
+}
+
+body.theme-magistrate .chat-bubble {
+  border-left: 3px solid #e3b341;
+  border-radius: 0 15px 15px 15px;
+}
+
+/* =========================================
+   THEME 2: THE ELDRITCH WATCHER
+   Vibe: Cosmic Horror, Creeping Vines, Sickly Magic
+========================================= */
 body.theme-eldritch {
-  background-color: #050a05 !important;
-  background-image: repeating-linear-gradient(45deg, #0a140a 25%, transparent 25%, transparent 75%, #0a140a 75%, #0a140a), repeating-linear-gradient(135deg, #0a140a 25%, #050a05 25%, #050a05 75%, #0a140a 75%, #0a140a) !important;
-  background-size: 40px 40px !important; color: #66ff66 !important; font-family: 'Eczar', serif !important;
+  font-family: 'Almendra', serif; 
+  background-color: #0a0e0a;
+  color: #a3c2a3;
+  /* Complex repeating radial gradient mimicking creeping vines/miasma */
+  background-image: 
+    radial-gradient(circle at 0% 0%, rgba(45, 15, 60, 0.4) 10%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(15, 45, 30, 0.4) 10%, transparent 40%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(20, 50, 20, 0.1) 0, rgba(20, 50, 20, 0.1) 10px, transparent 10px, transparent 20px);
 }
-body.theme-eldritch .panel, body.theme-eldritch .notebook, body.theme-eldritch .tab-btn.active { background-color: rgba(5, 15, 5, 0.95) !important; border-color: #2e8b57 !important; }
-body.theme-eldritch .chat-bubble { background-color: rgba(10, 30, 10, 0.8) !important; border-left-color: #43a047 !important; }
-body.theme-eldritch .primary-btn, body.theme-eldritch .tab-btn.active { border-color: #43a047 !important; color: #43a047 !important; }
 
-/* --- THE OLYMPIAN THEME --- */
-body.theme-olympian {
-  background: linear-gradient(135deg, #fdfbf7 0%, #e0d6c8 100%) !important; color: #5c4033 !important; font-family: 'Cinzel', serif !important;
+body.theme-eldritch h1, 
+body.theme-eldritch h2, 
+body.theme-eldritch h3 {
+  font-family: 'Almendra', serif;
+  color: #825bd2; 
+  text-shadow: 0 0 10px rgba(130, 91, 210, 0.6);
+  letter-spacing: 3px;
 }
-body.theme-olympian .panel, body.theme-olympian .notebook, body.theme-olympian .tab-btn.active { background-color: rgba(255, 255, 255, 0.85) !important; border-color: #b8860b !important; }
-body.theme-olympian .chat-bubble { background-color: rgba(245, 240, 225, 0.9) !important; border-left-color: #b8860b !important; }
-body.theme-olympian .primary-btn, body.theme-olympian .tab-btn.active { border-color: #b8860b !important; color: #b8860b !important; font-weight: bold; }
+
+body.theme-eldritch .primary-btn {
+  border: 2px solid #2b7a2b;
+  color: #c4ffc4;
+  background: rgba(10, 30, 10, 0.8);
+  border-radius: 25px 5px 25px 5px; 
+  box-shadow: 0 0 10px rgba(43, 122, 43, 0.3);
+}
+
+body.theme-eldritch .primary-btn:hover:not(:disabled) {
+  background: rgba(43, 122, 43, 0.4);
+  border-color: #55ff55;
+  box-shadow: 0 0 20px rgba(85, 255, 85, 0.6), inset 0 0 10px rgba(85, 255, 85, 0.4);
+  transform: scale(1.02);
+}
+
+body.theme-eldritch .chat-bubble {
+  border-left: 3px solid #825bd2;
+  border-radius: 0 15px 15px 15px;
+}
+
+/* =========================================
+   THEME 3: THE OLYMPIAN
+   Vibe: Heavenly, Grand, Marble, Gold, Divine Light
+========================================= */
+body.theme-olympian {
+  font-family: 'Philosopher', sans-serif; 
+  background-color: #f4f1ea; 
+  color: #2c2c2c; 
+  /* Majestic radiating sunburst pattern */
+  background-image: 
+    repeating-linear-gradient(45deg, rgba(218, 165, 32, 0.05) 0, rgba(218, 165, 32, 0.05) 20px, transparent 20px, transparent 40px),
+    radial-gradient(circle at center, #ffffff 0%, #e6dfd3 100%);
+}
+
+body.theme-olympian h1, 
+body.theme-olympian h2, 
+body.theme-olympian h3 {
+  font-family: 'Marcellus SC', serif;
+  color: #b8860b; 
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: 4px;
+}
+
+/* Forcing the glass panels to be light instead of dark for Olympian */
+body.theme-olympian .panel, 
+body.theme-olympian .notebook {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(218, 165, 32, 0.4);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  color: #2c2c2c;
+}
+
+/* Olympian Input Overrides */
+body.theme-olympian .setup-input,
+body.theme-olympian .journal-paper,
+body.theme-olympian #god-whisper-text {
+  background: rgba(0, 0, 0, 0.05);
+  color: #2c2c2c;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body.theme-olympian .primary-btn {
+  border: 1px solid #daac47;
+  color: #fff;
+  background: linear-gradient(to bottom, #f3cf7a, #d49a21);
+  border-radius: 30px; 
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15), inset 0 2px 2px rgba(255,255,255,0.5);
+  font-family: 'Marcellus SC', serif;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+}
+
+body.theme-olympian .primary-btn:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #f6db98, #e3a931);
+  box-shadow: 0 6px 12px rgba(218, 165, 32, 0.4), inset 0 2px 2px rgba(255,255,255,0.8);
+  transform: translateY(-2px);
+}
+
+body.theme-olympian .chat-bubble {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(218, 165, 32, 0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-left: 3px solid #b8860b;
+  border-radius: 0 15px 15px 15px;
+}
+
+body.theme-olympian .sys-bubble {
+  color: #8b0000 !important; 
+  border-color: #8b0000 !important;
+  background-color: rgba(139, 0, 0, 0.05) !important;
+}
+
+body.theme-olympian .whisper-bubble {
+  color: #8b6508 !important; 
+  border-color: #8b6508 !important;
+  background-color: rgba(139, 101, 8, 0.05) !important;
+}
+
+body.theme-olympian .fab-notepad {
+  background: #f4f1ea;
+  border-color: #daac47;
+}

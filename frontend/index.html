@@ -3,70 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Hidden Inquiry</title>
+  <title>The Interrogation Room</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Eczar:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Almendra:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;800&family=Eczar:wght@400;600&family=Marcellus+SC&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="theme-magistrate">
 
-  <!-- PRE-GAME SETUP SCREEN -->
   <div id="setup-screen" class="container" style="max-width: 800px; margin-top: 50px;">
-    <div class="panel">
-      <h1 style="margin-top: 0;">⚖️ Simulation Setup</h1>
-      <p style="opacity: 0.8; margin-bottom: 30px; text-align: center;">Configure your realm and cast before sealing the manor.</p>
+    <div class="panel" style="text-align: center;">
+      <h1 style="margin-top: 0; margin-bottom: 5px;">The interrogation room:</h1>
+      <h3 style="margin-top: 0; margin-bottom: 30px; font-style: italic; opacity: 0.8; font-weight: normal;">An LLM based murder mystery</h3>
       
-      <h3>1. Select Divine Aspect</h3>
+      <h3 style="text-align: left;">1. Select Divine Aspect</h3>
       <select id="themeSelector" onchange="changeTheme()" class="setup-input" style="margin-bottom: 30px;">
         <option value="magistrate">The Omniscient Magistrate</option>
         <option value="eldritch">The Eldritch Watcher</option>
         <option value="olympian">The Olympian</option>
       </select>
 
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; text-align: left;">
         <h3 style="margin: 0;">2. Customize The Cast</h3>
-        <button class="secondary-btn" onclick="addCharacter()">+ Add Suspect</button>
+        <button class="primary-btn" style="padding: 8px 15px; font-size: 0.9rem;" onclick="addCharacter()">+ Add Suspect</button>
       </div>
       
-      <div id="setupCastBody" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); max-height: 400px; overflow-y: auto; margin-bottom: 30px;">
-        <!-- JS populates setup rows here -->
-      </div>
+      <div id="setupCastBody" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); max-height: 400px; overflow-y: auto; margin-bottom: 30px; text-align: left;">
+        </div>
 
-      <button class="primary-btn" onclick="startGame()" style="width: 100%; font-size: 1.2rem; padding: 15px;">Begin Simulation</button>
+      <button class="primary-btn" onclick="initializeGame()" style="width: 100%; font-size: 1.2rem; padding: 15px;">Begin Simulation</button>
     </div>
   </div>
 
-  <!-- MAIN GAME SCREEN (Hidden until start) -->
-  <div id="game-screen" style="display: none;">
-    <h1>⚖️ The Hidden Inquiry</h1>
-    <div class="subtitle" id="day-counter">Day 1: The manor is sealed. The killer is among you.</div>
+  <div class="notebook-overlay" id="introModal">
+    <div class="notebook" style="max-width: 600px; padding: 30px; text-align: center;">
+      <h2 style="margin-top: 0;">Prologue</h2>
+      <div id="intro-story-text" style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px; min-height: 100px; font-style: italic;">
+        <em>The spirits are gathering the history of the manor...</em>
+      </div>
+      <button class="primary-btn" onclick="startDayOne()" style="width: 100%; display: none;" id="enter-manor-btn">Seal the Manor & Begin Day 1</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="container" style="display: none;">
+    <h1 style="text-align: center; margin-top: 20px; margin-bottom: 5px;">The interrogation room:</h1>
+    <div style="text-align: center; font-style: italic; opacity: 0.8; margin-bottom: 20px; font-size: 1.2rem;">An llm based murder mystery</div>
+    
+    <div class="subtitle" id="day-counter" style="text-align: center; margin-bottom: 20px; font-weight: bold; opacity: 0.9; color: inherit;">Day 1: The manor is sealed. The culprit is among you.</div>
 
     <div class="game-container">
       
-      <!-- LEFT COLUMN: The Cast -->
       <div class="panel cast-panel">
         <h3 style="margin-top: 0; opacity: 0.8;">The Cast</h3>
         <div class="roster-grid" id="roster"></div>
       </div>
 
-      <!-- RIGHT COLUMN: Interrogation Room -->
       <div class="panel chat-panel">
         <h3 style="margin-top: 0; opacity: 0.8;">Interrogation Log</h3>
         <div class="chat-log" id="chatbox">
-          <div class="sys-bubble">Lord Blackwood has been found dead—poisoned with rare hemlock.</div>
+          <div class="sys-bubble">The investigation officially begins.</div>
         </div>
 
         <div class="action-area">
           <button class="primary-btn" id="speak-btn" onclick="triggerNextSpeaker()">Let Next Character Speak</button>
-          <button class="primary-btn" id="whisper-btn" onclick="openWhisperModal()" style="border-color: #cc0000; color: #cc0000; font-weight: bold;">Whisper to Detective</button>
+          <button class="primary-btn" id="whisper-btn" onclick="openWhisperModal()" style="border-color: #cc0000; color: #cc0000; font-weight: bold;">Whisper to Investigator</button>
         </div>
       </div>
     </div>
+    
     <button class="fab-notepad" onclick="openNotebook()" title="Open Detective Notes">📝</button>
   </div>
 
-  <!-- DIVINE WHISPER MODAL -->
   <div class="notebook-overlay" id="whisperModal">
     <div class="notebook" style="max-width: 500px; text-align: center;">
       <div class="notebook-header">
@@ -74,19 +83,25 @@
         <button class="close-notebook" onclick="closeWhisperModal()">&times;</button>
       </div>
       <div style="padding: 20px;">
-        <p style="margin-bottom: 20px;">Whisper your suspicions into the Detective's mind to sway their investigation.</p>
-        <textarea id="god-whisper-text" style="width: 100%; height: 80px; padding: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.3); color: inherit; border: 1px solid currentColor; font-family: inherit; resize: none;" placeholder="e.g., 'The Butler's alibi is fractured. Look closely at him.'"></textarea>
         
-        <button class="primary-btn" onclick="submitWhisper()" style="border-color: #cc0000; color: #cc0000; background: rgba(204, 0, 0, 0.1); width: 100%; font-size: 1.1rem;">Whisper & Let Detective Accuse</button>
+        <div id="whisper-loading" style="font-style: italic; margin-bottom: 20px;">Gathering the day's echoes to summarize...</div>
+        
+        <div id="summary-section" style="margin-bottom: 20px; font-style: italic; text-align: left; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 4px; border-left: 3px solid currentColor; display: none;"></div>
+
+        <div id="whisper-input-section" style="display: none;">
+          <p style="margin-bottom: 20px;">Whisper your suspicions into the Investigator's mind to sway their deduction.</p>
+          <textarea id="god-whisper-text" style="width: 100%; height: 80px; padding: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.3); color: inherit; border: 1px solid currentColor; font-family: inherit; resize: none;"></textarea>
+          
+          <button class="primary-btn" onclick="submitWhisper()" style="border-color: #cc0000; color: #cc0000; background: rgba(204, 0, 0, 0.1); width: 100%; font-size: 1.1rem;">Whisper & Let Investigator Accuse</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- DETECTIVE NOTEBOOK MODAL -->
   <div class="notebook-overlay" id="notebookOverlay">
     <div class="notebook">
       <div class="notebook-header">
-        <h2>Detective's Private Journal</h2>
+        <h2>Investigator's Private Journal</h2>
         <button class="close-notebook" onclick="closeNotebook()">&times;</button>
       </div>
       <div class="tabs">
@@ -97,7 +112,7 @@
       <div class="tab-content active" id="tab-overview">
         <div class="notes-sidebar">
           <h3>Current Status</h3>
-          <ul style="padding-left: 20px; line-height: 1.6;" id="status-list"></ul>
+          <ul style="padding-left: 20px; line-height: 1.6; list-style-type: none; margin-left: 0; padding-left: 0;" id="status-list"></ul>
         </div>
         <div class="notes-main">
           <h3>General Case Notes</h3>
@@ -111,7 +126,8 @@
           <div class="suspect-mini-grid" id="suspect-grid"></div>
         </div>
         <div class="notes-main">
-          <h3 id="selected-suspect-name">Select a suspect...</h3>
+          <h3 id="selected-suspect-name" style="margin-bottom: 5px;">Select a suspect...</h3>
+          <div id="selected-suspect-persona" style="font-style: italic; font-size: 0.9rem; margin-bottom: 15px; opacity: 0.8;"></div>
           <textarea class="journal-paper" id="suspect-notes" placeholder="Observations, alibis, and motives..." disabled></textarea>
         </div>
       </div>

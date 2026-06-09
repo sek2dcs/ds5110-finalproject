@@ -1,12 +1,4 @@
----
-title: Mystery Sim
-emoji: 🕵️
-colorFrom: gray
-colorTo: red
-sdk: streamlit
-app_file: app13.py
-pinned: false
----
+
 
 # DS 5110 Final Project
 
